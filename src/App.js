@@ -1,7 +1,15 @@
 import React from 'react'
+import { Provider } from 'react-redux'
 
-function App () {
-  return <div>Hello World</div>
-}
+import store from './store'
+
+// importa arquivo de rotas
+import Routes from './routes'
+
+const App = () => (
+  <Provider store={store}>
+    <Routes />
+  </Provider>
+)
 
 export default App
