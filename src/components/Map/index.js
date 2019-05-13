@@ -1,9 +1,18 @@
 import React, { Component } from 'react'
 import MapGL, { Marker } from 'react-map-gl'
+import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
+import PropTypes from 'prop-types'
 
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-export default class Map extends Component {
+import { Avatar } from './style.js'
+
+import FormDialog from '../FormDialog'
+
+import { Creators as DialogActions } from '../../store/ducks/dialogs'
+
+class Map extends Component {
   // cria o state pro map
   state = {
     viewport: {
@@ -13,6 +22,25 @@ export default class Map extends Component {
       longitude: -52.4622,
       zoom: 14
     }
+  }
+
+  static propTypes = {
+    users: PropTypes.shape({
+      loading: PropTypes.bool,
+      data: PropTypes.arrayOf(
+        PropTypes.shape({
+          id: PropTypes.number,
+          login: PropTypes.string,
+          name: PropTypes.string,
+          avatar_url: PropTypes.string,
+          html_url: PropTypes.string,
+          latitude: PropTypes.number,
+          longitude: PropTypes.number
+        })
+      ),
+      error: PropTypes.string
+    }).isRequired,
+    openDialogRequest: PropTypes.func.isRequired
   }
 
   componentDidMount () {
@@ -34,6 +62,11 @@ export default class Map extends Component {
     })
   }
 
+  handleMapClick = e => {
+    const [longitude, latitude] = e.lngLat
+    this.props.openDialogRequest({ open: false, latitude, longitude })
+  }
+
   render () {
     return (
       <MapGL
@@ -43,22 +76,31 @@ export default class Map extends Component {
         mapboxApiAccessToken={process.env.REACT_APP_MAPBOXACCESSTOKEN}
         onViewportChange={viewport => this.setState({ viewport })}
       >
-        <Marker
-          latitude={-23.0821}
-          longitude={-52.4622}
-          onClick={this.handleMapClick}
-          captureClick
-        >
-          <img
-            style={{
-              borderRadius: 100,
-              width: 48,
-              height: 48
-            }}
-            src='https://avatars2.githubusercontent.com/u/2254731?v=4'
-          />
-        </Marker>
+        <FormDialog />
+        {this.props.users.data.map(user => (
+          <Marker
+            key={user.id}
+            latitude={user.latitude}
+            longitude={user.longitude}
+            onClick={this.handleMapClick}
+            captureClick
+          >
+            <Avatar src={user.avatar_url} />
+          </Marker>
+        ))}
       </MapGL>
     )
   }
 }
+
+const mapStateToProps = state => ({
+  users: state.users
+})
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(DialogActions, dispatch)
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Map)
